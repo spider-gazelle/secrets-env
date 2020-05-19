@@ -9,7 +9,7 @@ Extends the behaviour of the crystal-lang `ENV` module to read values injected b
    ```yaml
    dependencies:
      secrets-env:
-       github: place-labs/secret-env
+       github: place-labs/secrets-env
    ```
 
 2. Run `shards install`
@@ -36,7 +36,7 @@ Once set as env vars take preference over secrets, the new value is readable by 
 
 ## Contributing
 
-1. Fork it (<https://github.com/place-labs/secret-env/fork>)
+1. Fork it (<https://github.com/place-labs/secrets-env/fork>)
 2. Create your feature branch (`git checkout -b my-new-feature`)
 3. Commit your changes (`git commit -am 'Add some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)
