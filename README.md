@@ -1,5 +1,7 @@
 # secrets-env
 
+[![Build Status](https://api.travis-ci.com/place-labs/secrets-env.svg?branch=master)](https://travis-ci.com/place-labs/secrets-env)
+
 Extends the behaviour of the crystal-lang `ENV` module to read values injected by [docker secrets](https://docs.docker.com/engine/swarm/secrets/), [kubernetes secrets](https://kubernetes.io/docs/concepts/configuration/secret/) and other orchestration tools.
 
 ## Installation

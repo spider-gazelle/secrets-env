@@ -1,6 +1,10 @@
 name: secrets-env
 version: 1.0.0
 
+development_dependencies:
+  ameba:
+    github: crystal-ameba/ameba
+
 authors:
   - Kim Burgess <kim@place.technology>
 
