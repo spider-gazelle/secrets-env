@@ -1,6 +1,7 @@
+require "../src/secrets-env"
+
 require "spec"
 require "file"
-require "../src/secrets-env"
 
 original_secrets_path = nil
 
@@ -25,6 +26,18 @@ describe ENV do
       tmp_name = Path[tmp.path].basename
       ENV[tmp_name].should eq("hunter2")
       tmp.delete
+    end
+  end
+
+  describe "accessed" do
+    it "includes environment variables accessed by non-strict lookups" do
+      ENV["HELLO"]?
+      ENV.accessed.should contain("HELLO")
+    end
+
+    it "includes environment variables accessed by strict lookups" do
+      ENV["SECRETS_PATH"]
+      ENV.accessed.should contain("SECRETS_PATH")
     end
   end
 end

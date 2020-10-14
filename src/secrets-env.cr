@@ -4,6 +4,25 @@ require "path"
 module ENV
   DEFAULT_SECRETS_PATH = "/run/secrets"
 
+  # :nodoc:
+  ACCESSED = [] of String
+
+  # Returns a compile-time generated array of each environment variable
+  # accessed by the program.
+  def self.accessed : Array(String)
+    ACCESSED
+  end
+
+  macro [](key)
+    {{ ACCESSED << key if key.is_a? StringLiteral && !ACCESSED.includes? key }}
+    ENV.fetch({{ key }})
+  end
+
+  macro []?(key)
+    {{ ACCESSED << key if key.is_a? StringLiteral && !ACCESSED.includes? key }}
+    ENV.fetch({{ key }}, nil)
+  end
+
   # Retrieves a value corresponding to a given *key*. The value will be
   # retrieved from (in order of priorities): system env vars, available secrets
   # files or the return value of the block.
