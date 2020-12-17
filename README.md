@@ -1,7 +1,5 @@
 # secrets-env
 
-[![Build Status](https://api.travis-ci.com/place-labs/secrets-env.svg?branch=master)](https://travis-ci.com/place-labs/secrets-env)
-
 Extends the behaviour of the crystal-lang `ENV` module to read values injected by [docker secrets](https://docs.docker.com/engine/swarm/secrets/), [kubernetes secrets](https://kubernetes.io/docs/concepts/configuration/secret/) and other orchestration tools.
 
 ## Installation
@@ -11,7 +9,7 @@ Extends the behaviour of the crystal-lang `ENV` module to read values injected b
    ```yaml
    dependencies:
      secrets-env:
-       github: place-labs/secrets-env
+       github: spider-gazelle/secrets-env
    ```
 
 2. Run `shards install`
@@ -36,15 +34,3 @@ Secrets are immutable.
 Once set as env vars take preference over secrets, the new value is readable by the current machine, but is ephemeral.
 
 Additionally, `ENV.accessed` is a compile-time record of all accesses to the `ENV` variable across the program.
-
-## Contributing
-
-1. Fork it (<https://github.com/place-labs/secrets-env/fork>)
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create a new Pull Request
-
-## Contributors
-
-- [Kim Burgess](https://github.com/KimBurgess) - creator and maintainer
