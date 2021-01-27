@@ -22,7 +22,7 @@ end
 #
 # Yields the secret key to the block.
 def with_temp_secret(key : String, value : String, path = Dir.tempdir, & : String, String -> Nil) : Nil
-  with_temp_env_var("SECRETS_PATH", path) do |_, path|
+  with_temp_env_var("SECRETS_PATH", path) do
     secret = Path[path, key]
     raise "file conflict #{secret} already exists" if File.exists? secret
     File.write secret, value
