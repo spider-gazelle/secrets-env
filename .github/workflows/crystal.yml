@@ -22,7 +22,6 @@ jobs:
         with:
           crystal: ${{matrix.crystal}}
       - uses: actions/checkout@v2
-      - run: shards install
       - run: crystal spec
       - run: crystal tool format --check
         if: matrix.crystal == 'latest'
