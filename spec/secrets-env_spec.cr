@@ -35,7 +35,7 @@ describe ENV do
     end
 
     it "reflects the presence of a secret" do
-      with_temp_secret("SECRETS_ENV_TEST", "foo") do |key, value|
+      with_temp_secret("SECRETS_ENV_TEST", "foo") do |key, _|
         ENV.has_key?(key).should be_true
       end
     end
