@@ -118,7 +118,7 @@ describe ENV do
     end
 
     it "includes runtime lookups" do
-      runtime_key  = ->() { "SECRETS_ENV_RUNTIME_TEST" }.call
+      runtime_key = ->{ "SECRETS_ENV_RUNTIME_TEST" }.call
       ENV.accessed.should_not contain(runtime_key)
       ENV[runtime_key]?
       ENV.accessed.should contain(runtime_key)
