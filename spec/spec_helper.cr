@@ -17,7 +17,6 @@ def with_temp_env_var(key : String, value : String, & : String, String -> Nil) :
   set_env_var! key, original_value
 end
 
-
 # Write an ephemeral secret to the filesystem that will persist while the passed
 # block executes.
 #
