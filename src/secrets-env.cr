@@ -26,13 +26,19 @@ module ENV
     ENV.fetch({{ key }})
   end
 
-  # Override `.[]?` to enable compile-time resolution or accessed keys.
-  #
-  # Maintains the behaviour of the method of the same name.
-  macro []?(key)
-    {{ ACCESSED << key if key.is_a? StringLiteral && !ACCESSED.includes? key }}
-    ENV.fetch({{ key }}, nil)
-  end
+  {% if compare_versions(Crystal::VERSION, "0.36.0") < 0 %}
+    {% verbatim do %}
+      # Override `.[]?` to enable compile-time resolution or accessed keys.
+      #
+      # Maintains the behaviour of the method of the same name.
+      macro []?(key)
+        {{ ACCESSED << key if key.is_a? StringLiteral && !ACCESSED.includes? key }}
+        ENV.fetch({{ key }}, nil)
+      end
+    {% end %}
+  {% else %}
+    STDERR.puts "Warning: unsupported Crystal version, ENV.accessed will only provide partial results"
+  {% end %}
 
   # Returns the set of all environment variables accessed by the program.
   #

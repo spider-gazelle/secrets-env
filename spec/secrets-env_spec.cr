@@ -103,14 +103,18 @@ describe ENV do
   end
 
   describe "accessed" do
-    it "includes environment variables accessed by non-strict lookups" do
-      ENV["SECRETS_ENV_NON_STRICT_TEST"]?
-      ENV.accessed.should contain("SECRETS_ENV_NON_STRICT_TEST")
-    end
+    context "compile-time resolution" do
+      {% if compare_versions(Crystal::VERSION, "0.36.0") < 0 %}
+        it "supports non-strict lookups" do
+          ENV.accessed.should contain("SECRETS_ENV_NON_STRICT_TEST")
+          ENV["SECRETS_ENV_NON_STRICT_TEST"]?
+        end
+      {% end %}
 
-    it "includes environment variables accessed by strict lookups" do
-      ENV["SECRETS_ENV_STRICT_TEST"] rescue nil
-      ENV.accessed.should contain("SECRETS_ENV_STRICT_TEST")
+      it "supports strict lookups" do
+        ENV.accessed.should contain("SECRETS_ENV_STRICT_TEST")
+        ENV["SECRETS_ENV_STRICT_TEST"] rescue nil
+      end
     end
 
     it "includes runtime lookups" do
