@@ -1,43 +1,116 @@
+require "./spec_helper"
 require "../src/secrets-env"
-
 require "spec"
-require "file"
-
-original_secrets_path = nil
-
-Spec.before_suite do
-  original_secrets_path = Crystal::System::Env.get "SECRETS_PATH"
-  Crystal::System::Env.set "SECRETS_PATH", Dir.tempdir
-end
-
-Spec.after_suite do
-  Crystal::System::Env.set "SECRETS_PATH", original_secrets_path
-end
 
 describe ENV do
+  describe ".has_secret?" do
+    it "reflects the presence of a secret" do
+      ENV.has_secret?("SECRETS_ENV_DOES_NOT_EXIST").should be_false
+      with_temp_secret("SECRETS_ENV_TEST", "foo") do |key, _|
+        ENV.has_secret?(key).should be_true
+      end
+    end
+  end
+
+  describe ".fetch_secret" do
+    it "reads the value when available" do
+      with_temp_secret("SECRETS_ENV_TEST", "foo") do |key, value|
+        read_value = ENV.fetch_secret(key) { fail "file read missed" }
+        read_value.should eq(value)
+      end
+    end
+
+    it "falls back to the block if unavailable" do
+      value = ENV.fetch_secret("SECRETS_ENV_DOES_NOT_EXIST") { "fallback" }
+      value.should eq("fallback")
+    end
+  end
+
+  describe ".has_key?" do
+    it "reflects presence of an environment variable" do
+      ENV.has_key?("SECRETS_ENV_DOES_NOT_EXIST").should be_false
+      with_temp_env_var("SECRETS_ENV_TEST", "foo") do |key, _|
+        ENV.has_key?(key).should be_true
+      end
+    end
+
+    it "reflects the presence of a secret" do
+      with_temp_secret("SECRETS_ENV_TEST", "foo") do |key, value|
+        ENV.has_key?(key).should be_true
+      end
+    end
+  end
+
+  describe ".fetch" do
+    it "fetches from an environment variable" do
+      with_temp_env_var("SECRETS_ENV_TEST", "foo") do |key, value|
+        ENV.fetch(key).should eq(value)
+      end
+    end
+
+    it "fetches from a secret" do
+      with_temp_secret("SECRETS_ENV_TEST", "foo") do |key, value|
+        ENV.fetch(key).should eq(value)
+      end
+    end
+
+    it "preferences env vars if both exist" do
+      with_temp_secret("SECRETS_ENV_TEST", "secret value") do |key, secret|
+        ENV.fetch(key).should eq(secret)
+        with_temp_env_var(key, "env value") do |_, env|
+          ENV.fetch(key).should eq(env)
+        end
+      end
+    end
+  end
+
   describe "[]" do
     it "returns results from env vars" do
-      # Regression test for original behaviour
-      ENV["SECRETS_PATH"].should eq(Dir.tempdir)
+      with_temp_env_var("SECRETS_ENV_TEST", "42") do
+        ENV["SECRETS_ENV_TEST"].should eq("42")
+      end
     end
 
     it "returns results from a secrets file" do
-      tmp = File.tempfile &.print("hunter2")
-      tmp_name = Path[tmp.path].basename
-      ENV[tmp_name].should eq("hunter2")
-      tmp.delete
+      with_temp_secret("SECRETS_ENV_TEST", "hunter2") do |key, value|
+        ENV[key].should eq(value)
+      end
+    end
+
+    it "raises if the key does not exist" do
+      expect_raises(KeyError) do
+        ENV["SECRETS_ENV_DOES_NOT_EXIST"]
+      end
+    end
+  end
+
+  describe "[]?" do
+    it "returns results from env vars" do
+      with_temp_env_var("SECRETS_ENV_TEST", "42") do
+        ENV["SECRETS_ENV_TEST"].should eq("42")
+      end
+    end
+
+    it "returns results from a secrets file" do
+      with_temp_secret("SECRETS_ENV_TEST", "hunter2") do |key, value|
+        ENV[key].should eq(value)
+      end
+    end
+
+    it "returns nil if the key does not exist" do
+      ENV["SECRETS_ENV_DOES_NOT_EXIST"]?.should be_nil
     end
   end
 
   describe "accessed" do
     it "includes environment variables accessed by non-strict lookups" do
-      ENV["HELLO"]?
-      ENV.accessed.should contain("HELLO")
+      ENV["SECRETS_ENV_NON_STRICT_TEST"]?
+      ENV.accessed.should contain("SECRETS_ENV_NON_STRICT_TEST")
     end
 
     it "includes environment variables accessed by strict lookups" do
-      ENV["SECRETS_PATH"]
-      ENV.accessed.should contain("SECRETS_PATH")
+      ENV["SECRETS_ENV_STRICT_TEST"] rescue nil
+      ENV.accessed.should contain("SECRETS_ENV_STRICT_TEST")
     end
   end
 end
