@@ -4,23 +4,46 @@ require "path"
 module ENV
   DEFAULT_SECRETS_PATH = "/run/secrets"
 
-  # :nodoc:
-  ACCESSED = [] of String
+  private ACCESSED = [] of String
 
-  # Returns a compile-time generated array of each environment variable
-  # accessed by the program.
-  def self.accessed : Array(String)
-    ACCESSED
+  macro finished
+    {% if ACCESSED.empty? %}
+      private STATIC_ACCESSED = Tuple.new
+    {% else %}
+      private STATIC_ACCESSED = Tuple.new(
+        {% for key in ACCESSED %}
+          {{ key }},
+        {% end %}
+      )
+    {% end %}
   end
 
+  # Override `.[]` to enable compile-time resolution or accessed keys.
+  #
+  # Maintains the behaviour of the method of the same name.
   macro [](key)
     {{ ACCESSED << key if key.is_a? StringLiteral && !ACCESSED.includes? key }}
     ENV.fetch({{ key }})
   end
 
+  # Override `.[]?` to enable compile-time resolution or accessed keys.
+  #
+  # Maintains the behaviour of the method of the same name.
   macro []?(key)
     {{ ACCESSED << key if key.is_a? StringLiteral && !ACCESSED.includes? key }}
     ENV.fetch({{ key }}, nil)
+  end
+
+  # Returns the set of all environment variables accessed by the program.
+  #
+  # Items that can be statically resolved will be provided at compile time, with
+  # dynamic access appended following usage.
+  def self.accessed(static_only = false) : Enumerable(String)
+    if static_only
+      STATIC_ACCESSED
+    else
+      ACCESSED.dup
+    end
   end
 
   # Retrieves a value corresponding to a given *key*. The value will be
@@ -31,6 +54,7 @@ module ENV
   # injected to an environment from docker-compose, kubernetes and other
   # orchestration tools.
   def self.fetch(key : String, &block : String -> String?)
+    ACCESSED << key unless key.in? ACCESSED
     previous_def(key) do
       fetch_secret(key) do
         yield key
