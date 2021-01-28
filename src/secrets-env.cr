@@ -18,6 +18,18 @@ module ENV
     {% end %}
   end
 
+  # Returns the set of all environment variables accessed by the program.
+  #
+  # Items that can be statically resolved will be provided at compile time, with
+  # dynamic access appended following usage.
+  def self.accessed(static_only = false) : Enumerable(String)
+    if static_only
+      STATIC_ACCESSED
+    else
+      ACCESSED.dup
+    end
+  end
+
   # Override `.[]` to enable compile-time resolution or accessed keys.
   #
   # Maintains the behaviour of the method of the same name.
@@ -37,20 +49,11 @@ module ENV
       end
     {% end %}
   {% else %}
-    STDERR.puts "Warning: unsupported Crystal version, ENV.accessed will only provide partial results"
-  {% end %}
-
-  # Returns the set of all environment variables accessed by the program.
-  #
-  # Items that can be statically resolved will be provided at compile time, with
-  # dynamic access appended following usage.
-  def self.accessed(static_only = false) : Enumerable(String)
-    if static_only
-      STATIC_ACCESSED
-    else
-      ACCESSED.dup
+    def self.accessed(static_only = false) : Enumerable(String)
+      raise "Static only ENV.accessed is not supported on #{Crystal::VERSION}" if static_only
+      previous_def
     end
-  end
+  {% end %}
 
   # Retrieves a value corresponding to a given *key*. The value will be
   # retrieved from (in order of priorities): system env vars, available secrets
