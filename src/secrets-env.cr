@@ -1,32 +1,25 @@
 require "file"
 require "path"
+require "set"
 
 module ENV
   DEFAULT_SECRETS_PATH = "/run/secrets"
 
-  private ACCESSED = [] of String
+  private STATIC_ACCESSED = [] of String
 
   macro finished
-    {% if ACCESSED.empty? %}
-      private STATIC_ACCESSED = StaticArray(String, 0).new ""
-    {% else %}
-      private STATIC_ACCESSED = Tuple.new(
-        {% for key in ACCESSED %}
-          {{ key }},
-        {% end %}
-      )
-    {% end %}
+    private ACCESSED = STATIC_ACCESSED.to_set
   end
 
   # Returns the set of all environment variables accessed by the program.
   #
   # Items that can be statically resolved will be provided at compile time, with
   # dynamic access appended following usage.
-  def self.accessed(static_only = false) : Enumerable(String)
+  def self.accessed(static_only = false) : Array(String)
     if static_only
-      STATIC_ACCESSED
+      STATIC_ACCESSED.dup
     else
-      ACCESSED.dup
+      ACCESSED.to_a
     end
   end
 
@@ -34,7 +27,7 @@ module ENV
   #
   # Maintains the behaviour of the method of the same name.
   macro [](key)
-    {{ ACCESSED << key if key.is_a? StringLiteral && !ACCESSED.includes? key }}
+    {{ STATIC_ACCESSED << key if key.is_a? StringLiteral && !STATIC_ACCESSED.includes? key }}
     ENV.fetch({{ key }})
   end
 
@@ -44,12 +37,12 @@ module ENV
       #
       # Maintains the behaviour of the method of the same name.
       macro []?(key)
-        {{ ACCESSED << key if key.is_a? StringLiteral && !ACCESSED.includes? key }}
+        {{ STATIC_ACCESSED << key if key.is_a? StringLiteral && !STATIC_ACCESSED.includes? key }}
         ENV.fetch({{ key }}, nil)
       end
     {% end %}
   {% else %}
-    def self.accessed(static_only = false) : Enumerable(String)
+    def self.accessed(static_only = false) : Array(String)
       raise "Static only ENV.accessed is not supported on #{Crystal::VERSION}" if static_only
       previous_def
     end
@@ -63,7 +56,7 @@ module ENV
   # injected to an environment from docker-compose, kubernetes and other
   # orchestration tools.
   def self.fetch(key : String, &block : String -> String?)
-    ACCESSED << key unless key.in? ACCESSED
+    ACCESSED << key
     previous_def(key) do
       fetch_secret(key) do
         yield key
