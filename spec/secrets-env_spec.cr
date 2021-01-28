@@ -64,7 +64,7 @@ describe ENV do
     end
   end
 
-  describe "[]" do
+  describe ".[]" do
     it "returns results from env vars" do
       with_temp_env_var("SECRETS_ENV_TEST", "42") do
         ENV["SECRETS_ENV_TEST"].should eq("42")
@@ -84,7 +84,7 @@ describe ENV do
     end
   end
 
-  describe "[]?" do
+  describe ".[]?" do
     it "returns results from env vars" do
       with_temp_env_var("SECRETS_ENV_TEST", "42") do
         ENV["SECRETS_ENV_TEST"].should eq("42")
@@ -102,14 +102,15 @@ describe ENV do
     end
   end
 
-  describe "accessed" do
-    context "compile-time resolution" do
-      {% if compare_versions(Crystal::VERSION, "0.36.0") < 0 %}
-        it "supports non-strict lookups" do
-          ENV.accessed.should contain("SECRETS_ENV_NON_STRICT_TEST")
-          ENV["SECRETS_ENV_NON_STRICT_TEST"]?
-        end
-      {% end %}
+  describe ".accessed" do
+    context "static resolution" do
+      it "supports non-strict lookups" do
+        {% if compare_versions(Crystal::VERSION, "0.36.0") >= 0 %}
+          pending! "Static only ENV.accessed unavailable on #{Crystal::VERSION} for non-strict lookups"
+        {% end %}
+        ENV.accessed.should contain("SECRETS_ENV_NON_STRICT_TEST")
+        ENV["SECRETS_ENV_NON_STRICT_TEST"]?
+      end
 
       it "supports strict lookups" do
         ENV.accessed.should contain("SECRETS_ENV_STRICT_TEST")
@@ -122,7 +123,13 @@ describe ENV do
       ENV.accessed.should_not contain(runtime_key)
       ENV[runtime_key]?
       ENV.accessed.should contain(runtime_key)
-      ENV.accessed(static_only: true).should_not contain(runtime_key)
+      {% if compare_versions(Crystal::VERSION, "0.36.0") < 0 %}
+        ENV.accessed(static_only: true).should_not contain(runtime_key)
+      {% else %}
+        expect_raises(Exception) do
+          ENV.accessed(static_only: true)
+        end
+      {% end %}
     end
   end
 end
