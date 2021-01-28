@@ -8,7 +8,7 @@ module ENV
 
   macro finished
     {% if ACCESSED.empty? %}
-      private STATIC_ACCESSED = Tuple.new
+      private STATIC_ACCESSED = StaticArray(String, 0).new ""
     {% else %}
       private STATIC_ACCESSED = Tuple.new(
         {% for key in ACCESSED %}
