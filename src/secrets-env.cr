@@ -23,16 +23,23 @@ module ENV
     end
   end
 
-  # Override `.[]` to enable compile-time resolution or accessed keys.
-  #
-  # Maintains the behaviour of the method of the same name.
-  macro [](key)
-    {{ STATIC_ACCESSED << key if key.is_a? StringLiteral && !STATIC_ACCESSED.includes? key }}
-    ENV.fetch({{ key }})
-  end
-
-  {% if compare_versions(Crystal::VERSION, "0.36.0") < 0 %}
+  # Workaround for a regressions in crystal-lang 0.36.0.
+  # https://github.com/crystal-lang/crystal/pull/10338
+  {% if compare_versions(Crystal::VERSION, "0.36.0") == 0 %}
+    def self.accessed(static_only = false) : Array(String)
+      raise "Static only ENV.accessed is not supported on #{Crystal::VERSION}" if static_only
+      previous_def
+    end
+  {% else %}
     {% verbatim do %}
+      # Override `.[]` to enable compile-time resolution or accessed keys.
+      #
+      # Maintains the behaviour of the method of the same name.
+      macro [](key)
+        {{ STATIC_ACCESSED << key if key.is_a? StringLiteral && !STATIC_ACCESSED.includes? key }}
+        ENV.fetch({{ key }})
+      end
+
       # Override `.[]?` to enable compile-time resolution or accessed keys.
       #
       # Maintains the behaviour of the method of the same name.
@@ -41,11 +48,6 @@ module ENV
         ENV.fetch({{ key }}, nil)
       end
     {% end %}
-  {% else %}
-    def self.accessed(static_only = false) : Array(String)
-      raise "Static only ENV.accessed is not supported on #{Crystal::VERSION}" if static_only
-      previous_def
-    end
   {% end %}
 
   # Retrieves a value corresponding to a given *key*. The value will be
