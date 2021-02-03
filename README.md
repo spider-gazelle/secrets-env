@@ -33,4 +33,4 @@ Note: attempts to update the environment (`[]=`) will apply this as an env var.
 Secrets are immutable.
 Once set as env vars take preference over secrets, the new value is readable by the current machine, but is ephemeral.
 
-Additionally, `ENV.accessed` is a compile-time record of all accesses to the `ENV` variable across the program.
+Additionally, `ENV.accessed` provides a record of all accesses to the `ENV` variable across the program.
