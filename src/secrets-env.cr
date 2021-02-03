@@ -5,48 +5,26 @@ require "set"
 module ENV
   DEFAULT_SECRETS_PATH = "/run/secrets"
 
-  private STATIC_ACCESSED = [] of String
+  private ACCESSED = Set(String).new
 
-  macro finished
-    private ACCESSED = STATIC_ACCESSED.to_set
+  # Returns the set of all environment variables or secrets  that have been
+  # accessed by the program.
+  def self.accessed : Array(String)
+    ACCESSED.to_a
   end
 
-  # Returns the set of all environment variables accessed by the program.
-  #
-  # Items that can be statically resolved will be provided at compile time, with
-  # dynamic access appended following usage.
-  def self.accessed(static_only = false) : Array(String)
-    if static_only
-      STATIC_ACCESSED.dup
-    else
-      ACCESSED.to_a
+  @[Deprecated("Static resolution no longer supported")]
+  def self.accessed(static_only) : Array(String)
+    raise "Static resolution no longer supported" if static_only
+    ACCESSED.to_a
+  end
+
+  def self.each
+    previous_def do |key, value|
+      ACCESSED << key
+      yield({key, value})
     end
   end
-
-  # Override `.[]` to enable compile-time resolution or accessed keys.
-  #
-  # Maintains the behaviour of the method of the same name.
-  macro [](key)
-    {{ STATIC_ACCESSED << key if key.is_a? StringLiteral && !STATIC_ACCESSED.includes? key }}
-    ENV.fetch({{ key }})
-  end
-
-  {% if compare_versions(Crystal::VERSION, "0.36.0") < 0 %}
-    {% verbatim do %}
-      # Override `.[]?` to enable compile-time resolution or accessed keys.
-      #
-      # Maintains the behaviour of the method of the same name.
-      macro []?(key)
-        {{ STATIC_ACCESSED << key if key.is_a? StringLiteral && !STATIC_ACCESSED.includes? key }}
-        ENV.fetch({{ key }}, nil)
-      end
-    {% end %}
-  {% else %}
-    def self.accessed(static_only = false) : Array(String)
-      raise "Static only ENV.accessed is not supported on #{Crystal::VERSION}" if static_only
-      previous_def
-    end
-  {% end %}
 
   # Retrieves a value corresponding to a given *key*. The value will be
   # retrieved from (in order of priorities): system env vars, available secrets

@@ -103,33 +103,19 @@ describe ENV do
   end
 
   describe ".accessed" do
-    context "static resolution" do
-      it "supports non-strict lookups" do
-        {% if compare_versions(Crystal::VERSION, "0.36.0") >= 0 %}
-          pending! "Static only ENV.accessed unavailable on #{Crystal::VERSION} for non-strict lookups"
-        {% end %}
-        ENV.accessed.should contain("SECRETS_ENV_NON_STRICT_TEST")
-        ENV["SECRETS_ENV_NON_STRICT_TEST"]?
-      end
-
-      it "supports strict lookups" do
-        ENV.accessed.should contain("SECRETS_ENV_STRICT_TEST")
-        ENV["SECRETS_ENV_STRICT_TEST"] rescue nil
-      end
+    it "tracks non-strict lookups" do
+      ENV["SECRETS_ENV_NON_STRICT_TEST"]?
+      ENV.accessed.should contain("SECRETS_ENV_NON_STRICT_TEST")
     end
 
-    it "includes runtime lookups" do
-      runtime_key = ->{ "SECRETS_ENV_RUNTIME_TEST" }.call
-      ENV.accessed.should_not contain(runtime_key)
-      ENV[runtime_key]?
-      ENV.accessed.should contain(runtime_key)
-      {% if compare_versions(Crystal::VERSION, "0.36.0") < 0 %}
-        ENV.accessed(static_only: true).should_not contain(runtime_key)
-      {% else %}
-        expect_raises(Exception) do
-          ENV.accessed(static_only: true)
-        end
-      {% end %}
+    it "tracks strict lookups" do
+      ENV["SECRETS_ENV_STRICT_TEST"] rescue nil
+      ENV.accessed.should contain("SECRETS_ENV_STRICT_TEST")
+    end
+
+    it "tracks enumerations" do
+      ENV.each { }
+      ENV.accessed.should contain("CRYSTAL_PATH")
     end
   end
 end
